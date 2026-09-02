@@ -6,6 +6,7 @@ on:
     branches: [master]
 
 env:
+  SCITER_RUST_VERSION: "1.75"
   RUST_VERSION: "1.75"
   LLVM_VERSION: "15.0.6"
   FLUTTER_VERSION: "3.24.5"
