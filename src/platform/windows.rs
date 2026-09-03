@@ -1925,6 +1925,10 @@ pub fn add_recent_document(path: &str) {
 }
 
 pub fn is_installed() -> bool {
+    // 便携模式下不显示"未安装"提示
+    if std::env::var(PORTABLE_APPNAME_RUNTIME_ENV_KEY).is_ok() {
+        return true;
+    }
     let (_, _, _, exe) = get_install_info();
     std::fs::metadata(exe).is_ok()
 }
