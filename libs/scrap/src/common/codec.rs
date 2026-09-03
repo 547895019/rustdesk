@@ -268,18 +268,32 @@ impl Encoder {
             .unwrap_or((PreferCodec::Auto.into(), 0));
         let preference = most_frequent.enum_value_or(PreferCodec::Auto);
 
-        // auto: h265 > h264 > av1/vp9/vp8
-        let av1_test = Config::get_option(hbb_common::config::keys::OPTION_AV1_TEST) != "N";
-        let mut auto_codec = if av1_useable && av1_test {
+        // 自建服务器：VP8 > VP9 > H264 > H265，跳过 AV1
+        // 公共服务器：h265 > h264 > av1/vp9/vp8
+        let is_self_hosted = !hbb_common::config::Config::get_rendezvous_server().contains("rustdesk.com");
+        let av1_test = if is_self_hosted {
+            false
+        } else {
+            Config::get_option(hbb_common::config::keys::OPTION_AV1_TEST) != "N"
+        };
+        let mut auto_codec = if !is_self_hosted && av1_useable && av1_test {
             CodecFormat::AV1
         } else {
             CodecFormat::VP9
         };
-        if h264_useable {
+        if !is_self_hosted && h264_useable {
             auto_codec = CodecFormat::H264;
         }
-        if h265_useable {
+        if !is_self_hosted && h265_useable {
             auto_codec = CodecFormat::H265;
+        }
+        if is_self_hosted {
+            // 自建服务器优先 VP8（兼容性最好，延迟最低），其次 VP9
+            if vp8_useable {
+                auto_codec = CodecFormat::VP8;
+            } else {
+                auto_codec = CodecFormat::VP9;
+            }
         }
         if auto_codec == CodecFormat::VP9 || auto_codec == CodecFormat::AV1 {
             let mut system = System::new();
@@ -891,7 +905,7 @@ pub fn allow_d3d_render() -> bool {
 }
 
 pub const BR_BEST: f32 = 1.5;
-pub const BR_BALANCED: f32 = 0.67;
+pub const BR_BALANCED: f32 = 0.5;
 pub const BR_SPEED: f32 = 0.5;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

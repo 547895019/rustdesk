@@ -1169,13 +1169,7 @@ pub fn get_ipv6_punch_enabled() -> bool {
 
 pub fn get_local_option(key: &str) -> String {
     let v = LocalConfig::get_option(key);
-    if key == keys::OPTION_ENABLE_UDP_PUNCH || key == keys::OPTION_ENABLE_IPV6_PUNCH {
-        if v.is_empty() {
-            if !is_public(&Config::get_rendezvous_server()) {
-                return "N".to_owned();
-            }
-        }
-    }
+    // 自建服务器默认开启 UDP/IPv6 punch，不再因为非公共服务器而关闭
     v
 }
 

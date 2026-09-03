@@ -649,8 +649,10 @@ impl Client {
         let direct_failures = interface.get_lch().read().unwrap().direct_failures;
         let mut connect_timeout = 0;
         const MIN: u64 = 1000;
-        if is_local || peer_nat_type == NatType::SYMMETRIC {
+        if is_local {
             connect_timeout = MIN;
+        } else if peer_nat_type == NatType::SYMMETRIC {
+            connect_timeout = CONNECT_TIMEOUT;
         } else {
             if relay_server.is_empty() {
                 connect_timeout = CONNECT_TIMEOUT;
@@ -663,7 +665,8 @@ impl Client {
                     if my_nat_type == NatType::ASYMMETRIC as i32 {
                         connect_timeout = CONNECT_TIMEOUT;
                         if direct_failures > 0 {
-                            connect_timeout = punch_time_used * 6;
+                            // 保底至少等待 CONNECT_TIMEOUT/2，避免一次失败后永久放弃直连
+                            connect_timeout = std::cmp::max(punch_time_used * 6, CONNECT_TIMEOUT / 2);
                         }
                     } else if my_nat_type == NatType::SYMMETRIC as i32 {
                         connect_timeout = MIN;
